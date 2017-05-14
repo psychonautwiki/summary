@@ -1,0 +1,8 @@
+[package]
+authors = ["Kenan Sulayman <kenan@sly.mn>"]
+name = "fun"
+version = "0.1.0"
+
+[dependencies]
+katana = "1.0.2"
+wordnet_stemmer = "0.1.1"
