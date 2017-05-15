@@ -4,9 +4,25 @@ mod wordnet_stemmer;
 
 use wordnet_stemmer::{WordnetStemmer, NOUN, VERB, ADJ, ADV};
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-const STOP_WORDS: &'static [&'static str] = &["a", "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an", "and", "any", "are", "as", "at", "be", "because", "been", "but", "by", "can", "cannot", "could", "dear", "did", "do", "does", "either", "else", "ever", "every", "for", "from", "get", "got", "had", "has", "have", "he", "her", "hers", "him", "his", "how", "however", "i", "if", "in", "into", "is", "it", "its", "just", "least", "let", "like", "likely", "may", "me", "might", "most", "must", "my", "neither", "no", "nor", "not", "of", "off", "often", "on", "only", "or", "other", "our", "own", "rather", "said", "say", "says", "she", "should", "since", "so", "some", "than", "that", "the", "their", "them", "then", "there", "these", "they", "this", "tis", "to", "too", "twas", "us", "wants", "was", "we", "were", "what", "when", "where", "which", "while", "who", "whom", "why", "will", "with", "would", "yet", "you", "your"];
+const STOP_WORDS: &'static [&'static str] = &[
+    "a", "able", "about", "across", "after", "all", "almost", "also",
+    "am", "among", "an", "and", "any", "are", "as", "at", "be",
+    "because", "been", "but", "by", "can", "cannot", "could", "dear",
+    "did", "do", "does", "either", "else", "ever", "every", "for",
+    "from", "get", "got", "had", "has", "have", "he", "her", "hers",
+    "him", "his", "how", "however", "i", "if", "in", "into", "is",
+    "it", "its", "just", "least", "let", "like", "likely", "may",
+    "me", "might", "most", "must", "my", "neither", "no", "nor",
+    "not", "of", "off", "often", "on", "only", "or", "other", "our",
+    "own", "rather", "said", "say", "says", "she", "should", "since",
+    "so", "some", "than", "that", "the", "their", "them", "then",
+    "there", "these", "they", "this", "tis", "to", "too", "twas",
+    "us", "wants", "was", "we", "were", "what", "when", "where",
+    "which", "while", "who", "whom", "why", "will", "with", "would",
+    "yet", "you", "your"
+];
 
 struct Fun {
     stemmer: WordnetStemmer,
@@ -35,51 +51,90 @@ impl Fun {
         self.stemmer.lemma_phrase(ADV, &a)
     }
 
-    fn remove_stopwords(&self, phrase: &str) -> String {
+    fn process_words(&self, phrase: &str) -> String {
         let ref stop_words = self.stop_words;
 
         phrase
-        .to_lowercase()
-        .split_whitespace()
-        .filter_map(|word| {
-            if !stop_words.contains(word) {
-                Some(word)
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<&str>>()
-        .join(" ")
+            .to_lowercase()
+            .split_whitespace()
+            .filter_map(|word| {
+                if !stop_words.contains(word) {
+                    Some(word)
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<&str>>()
+            .join(" ")
     }
 
-    fn process (&self, phrases: &str) {
-        let lemma: Vec<String> =
-            katana::cut(&phrases.to_string())
-                .iter()
-                .map(|phrase| {
-                    self.cut(
-                        &self.remove_stopwords(
-                            &phrase.replace(".", "")
-                                   .replace(",", "")
-                                   .replace("\"", "")
-                                   .replace("'", "")
-                        )
+    fn process_phrases (&self, phrases: &str) -> Vec<String> {
+        katana::cut(&phrases.to_string())
+            .iter()
+            .map(|phrase| {
+                self.cut(
+                    &self.process_words(
+                        &phrase.replace(".", "")
+                               .replace(",", "")
+                               .replace("\"", "")
+                               .replace("'", "")
                     )
-                })
-                .collect();
+                )
+            })
+            .collect()
+    }
 
-        println!("{:?}", lemma);
+    fn sort_phrase_relevance(&mut self, phrases: Vec<String>) {
+        let mut keyword_frequency: HashMap<String, u64> = HashMap::new();
 
-        loop {
+        let cut_phrases =
+            phrases.iter()
+                   .map(|phrase| {
+                        phrase.split(" ")
+                            .collect::<Vec<&str>>()
+                    })
+                   .collect::<Vec<Vec<&str>>>();
 
+        /* populate keyword frequency map */
+        for phrase in cut_phrases.iter() {
+            for word in phrase.iter() {
+                let new_keyword_count: u64 = (*keyword_frequency.get(*word).unwrap_or(&0u64)) + 1;
+
+                keyword_frequency.insert(word.to_string(), new_keyword_count);
+            }
         }
+
+        let mut phrase_weights: HashMap<String, u64> = HashMap::new();
+
+        /* populate keyword frequency map */
+        for phrase in cut_phrases.iter() {
+            let mut weight = 0u64;
+
+            for word in phrase.iter() {
+                let word_weight = *keyword_frequency.get(*word).unwrap();
+
+                weight = weight + word_weight;
+            }
+
+            phrase_weights.insert(phrase.join(" "), weight);
+        }
+
+        println!("{:?}", phrase_weights);
+    }
+
+    fn summarize (&mut self, phrases: &str) -> Vec<String> {
+        let phrases: Vec<String> = self.process_phrases(phrases);
+        let _ = self.sort_phrase_relevance(phrases);
+
+        //phrases
+        Vec::new()
     }
 }
 
 fn main(){
-    let phrase = "Anyways, what is the criterion for inviting someone to this room again? Any thoughts on inviting a user? He seems to be pretty dedicated to the site, has been here for a while, I see him almost every day and he follows proper procedures re: edit summaries and such.";
+    let phrase = "In this work, we present a novel background subtraction system that uses a deep Convolutional Neural Network (CNN) to perform the segmentation. With this approach, feature engineering and parameter tuning become unnecessary since the network parameters can be learned from data by training a single CNN that can handle various video scenes. Additionally, we propose a new approach to estimate background model from video. For the training of the CNN, we employed randomly 5 percent video frames and their ground truth segmentations taken from the Change Detection challenge 2014(CDnet 2014). We also utilized spatial-median filtering as the post-processing of the network outputs. Our method is evaluated with different data-sets, and the network outperforms the existing algorithms with respect to the average ranking over different evaluation metrics. Furthermore, due to the network architecture, our CNN is capable of real time processing.";
 
-    let fun = Fun::new();
+    let mut fun = Fun::new();
 
-    fun.process(phrase);
+    println!("{:?}", fun.summarize(phrase));
 }
