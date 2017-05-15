@@ -4,7 +4,7 @@ mod wordnet_stemmer;
 
 use wordnet_stemmer::{WordnetStemmer, NOUN, VERB, ADJ, ADV};
 
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 const STOP_WORDS: &'static [&'static str] = &[
     "a", "able", "about", "across", "after", "all", "almost", "also",
@@ -68,29 +68,29 @@ impl Fun {
             .join(" ")
     }
 
-    fn process_phrases (&self, phrases: &str) -> Vec<String> {
+    fn process_phrases (&self, phrases: &str) -> Vec<Vec<String>> {
         katana::cut(&phrases.to_string())
             .iter()
             .map(|phrase| {
-                self.cut(
+                vec!(self.cut(
                     &self.process_words(
                         &phrase.replace(".", "")
                                .replace(",", "")
                                .replace("\"", "")
                                .replace("'", "")
                     )
-                )
+                ), phrase.to_string())
             })
             .collect()
     }
 
-    fn sort_phrase_relevance(&mut self, phrases: Vec<String>) {
-        let mut keyword_frequency: HashMap<String, u64> = HashMap::new();
+    fn sort_phrase_relevance(&mut self, phrases: Vec<Vec<String>>) {
+        let mut keyword_frequency: HashMap<String, u32> = HashMap::new();
 
         let cut_phrases =
             phrases.iter()
                    .map(|phrase| {
-                        phrase.split(" ")
+                        phrase[0].split(" ")
                             .collect::<Vec<&str>>()
                     })
                    .collect::<Vec<Vec<&str>>>();
@@ -98,17 +98,19 @@ impl Fun {
         /* populate keyword frequency map */
         for phrase in cut_phrases.iter() {
             for word in phrase.iter() {
-                let new_keyword_count: u64 = (*keyword_frequency.get(*word).unwrap_or(&0u64)) + 1;
+                let new_keyword_count: u32 = (*keyword_frequency.get(*word).unwrap_or(&0u32)) + 1;
 
                 keyword_frequency.insert(word.to_string(), new_keyword_count);
             }
         }
 
-        let mut phrase_weights: HashMap<String, u64> = HashMap::new();
+        let mut phrase_weights: BTreeMap<u32, BTreeSet<u32>> = BTreeMap::new();
+
+        let mut i:u32 = 0;
 
         /* populate keyword frequency map */
         for phrase in cut_phrases.iter() {
-            let mut weight = 0u64;
+            let mut weight = 0u32;
 
             for word in phrase.iter() {
                 let word_weight = *keyword_frequency.get(*word).unwrap();
@@ -116,14 +118,23 @@ impl Fun {
                 weight = weight + word_weight;
             }
 
-            phrase_weights.insert(phrase.join(" "), weight);
+            let mut weight_map = match phrase_weights.get(&weight) {
+                Some(map) => (*map).clone(),
+                None => BTreeSet::new()
+            };
+
+            weight_map.insert(i);
+
+            phrase_weights.insert(weight, weight_map);
+
+            i = i + 1;
         }
 
         println!("{:?}", phrase_weights);
     }
 
     fn summarize (&mut self, phrases: &str) -> Vec<String> {
-        let phrases: Vec<String> = self.process_phrases(phrases);
+        let phrases = self.process_phrases(phrases);
         let _ = self.sort_phrase_relevance(phrases);
 
         //phrases
