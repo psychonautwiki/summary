@@ -84,7 +84,9 @@ impl Fun {
             .collect()
     }
 
-    fn sort_phrase_relevance(&mut self, phrases: Vec<Vec<String>>) {
+    fn summarize (&mut self, phrases: &str, max_phrases: u32) -> Vec<String> {
+        let phrases = self.process_phrases(phrases);
+
         let mut keyword_frequency: HashMap<String, u32> = HashMap::new();
 
         let cut_phrases =
@@ -94,6 +96,11 @@ impl Fun {
                             .collect::<Vec<&str>>()
                     })
                    .collect::<Vec<Vec<&str>>>();
+
+        let in_phrases =
+            phrases.iter()
+                   .map(|phrase| phrase[1].clone())
+                   .collect::<Vec<String>>();
 
         /* populate keyword frequency map */
         for phrase in cut_phrases.iter() {
@@ -118,6 +125,7 @@ impl Fun {
                 weight = weight + word_weight;
             }
 
+            /* insert a weight relation: weight -> [phrases, ..] */
             let mut weight_map = match phrase_weights.get(&weight) {
                 Some(map) => (*map).clone(),
                 None => BTreeSet::new()
@@ -130,15 +138,30 @@ impl Fun {
             i = i + 1;
         }
 
-        println!("{:?}", phrase_weights);
-    }
+        let mut out_set: BTreeSet<u32> = BTreeSet::new();
 
-    fn summarize (&mut self, phrases: &str) -> Vec<String> {
-        let phrases = self.process_phrases(phrases);
-        let _ = self.sort_phrase_relevance(phrases);
+        let mut k = 0u32;
 
-        //phrases
-        Vec::new()
+        for (_, weight_set) in phrase_weights.iter().rev() {
+            for entry in weight_set.iter() {
+                k = k + 1;
+
+                if max_phrases < k {
+                    break;
+                }
+
+                out_set.insert(*entry);
+            }
+
+            if max_phrases < k {
+                break;
+            }
+        }
+
+        out_set
+            .iter()
+            .map(|entry| in_phrases[*entry as usize].clone())
+            .collect()
     }
 }
 
@@ -147,5 +170,5 @@ fn main(){
 
     let mut fun = Fun::new();
 
-    println!("{:?}", fun.summarize(phrase));
+    println!("{:?}", fun.summarize(phrase, 3u32));
 }
