@@ -1,5 +1,6 @@
-extern crate katana;
+extern crate regex;
 
+mod katana;
 mod wordnet_stemmer;
 
 use wordnet_stemmer::{WordnetStemmer, NOUN, VERB, ADJ, ADV};
