@@ -6,3 +6,22 @@ version = "0.1.0"
 [dependencies]
 katana = "1.0.2"
 regex = "0.2.1"
+
+[profile]
+
+[profile.dev]
+codegen-units = 1
+debug = true
+debug-assertions = true
+lto = false
+opt-level = 0
+panic = "unwind"
+rpath = false
+
+[profile.release]
+debug = false
+debug-assertions = false
+lto = true
+opt-level = 3
+panic = "abort"
+rpath = false
