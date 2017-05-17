@@ -1,7 +1,7 @@
 use rand::{thread_rng, Rng};
 
 /* trait on str allowing for case to be changed */
-use util::StringCase;
+use string_utils::StringCase;
 
 const TITLE_NUM: u32 = 666;
 
