@@ -8,44 +8,29 @@ use self::wordnet_stemmer::{WordnetStemmer, NOUN, VERB, ADJ, ADV};
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
-const STOP_WORDS: &'static [&'static str] = &[
-    "a", "able", "about", "across", "after", "all", "almost", "also",
-    "am", "among", "an", "and", "any", "are", "as", "at", "be",
-    "because", "been", "but", "by", "can", "cannot", "could", "dear",
-    "did", "do", "does", "either", "else", "ever", "every", "for",
-    "from", "get", "got", "had", "has", "have", "he", "her", "hers",
-    "him", "his", "how", "however", "i", "if", "in", "into", "is",
-    "it", "its", "just", "least", "let", "like", "likely", "may",
-    "me", "might", "most", "must", "my", "neither", "no", "nor",
-    "not", "of", "off", "often", "on", "only", "or", "other", "our",
-    "own", "rather", "said", "say", "says", "she", "should", "since",
-    "so", "some", "than", "that", "the", "their", "them", "then",
-    "there", "these", "they", "this", "tis", "to", "too", "twas",
-    "us", "wants", "was", "we", "were", "what", "when", "where",
-    "which", "while", "who", "whom", "why", "will", "with", "would",
-    "yet", "you", "your"
-];
+const STOP_WORDS: &'static [&'static str] = &["a", "able", "about", "across", "after", "all", "almost", "also", "am", "among", "an", "and", "any", "are", "as", "at", "be", "because", "been", "but", "by", "can", "cannot", "could", "dear", "did", "do", "does", "either", "else", "ever", "every", "for", "from", "get", "got", "had", "has", "have", "he", "her", "hers", "him", "his", "how", "however", "i", "if", "in", "into", "is", "it", "its", "just", "least", "let", "like", "likely", "may", "me", "might", "most", "must", "my", "neither", "no", "nor", "not", "of", "off", "often", "on", "only", "or", "other", "our", "own", "rather", "said", "say", "says", "she", "should", "since", "so", "some", "than", "that", "the", "their", "them", "then", "there", "these", "they", "this", "tis", "to", "too", "twas", "us", "wants", "was", "we", "were", "what", "when", "where", "which", "while", "who", "whom", "why", "will", "with", "would", "yet", "you", "your"];
 
 pub struct Summary {
     stemmer: WordnetStemmer,
-    stop_words: HashSet<String>
+    stop_words: HashSet<String>,
 }
 
 impl Summary {
-    pub fn new () -> Summary {
+    pub fn new() -> Summary {
         let stemmer = WordnetStemmer::new("./dict/").unwrap();
 
-        let stop_words = STOP_WORDS.iter()
-                                   .map(|word| word.to_string())
-                                   .collect::<HashSet<String>>();
+        let stop_words = STOP_WORDS
+            .iter()
+            .map(|word| word.to_string())
+            .collect::<HashSet<String>>();
 
         Summary {
             stemmer,
-            stop_words
+            stop_words,
         }
     }
 
-    fn cut (&self, phrase: &str) -> String {
+    fn cut(&self, phrase: &str) -> String {
         let a = self.stemmer.lemma_phrase(NOUN, phrase);
         let a = self.stemmer.lemma_phrase(VERB, &a);
         let a = self.stemmer.lemma_phrase(ADJ, &a);
@@ -59,18 +44,16 @@ impl Summary {
         phrase
             .to_lowercase()
             .split_whitespace()
-            .filter_map(|word| {
-                if !stop_words.contains(word) {
-                    Some(word)
-                } else {
-                    None
-                }
-            })
+            .filter_map(|word| if !stop_words.contains(word) {
+                            Some(word)
+                        } else {
+                            None
+                        })
             .collect::<Vec<&str>>()
             .join(" ")
     }
 
-    fn process_phrases (&self, phrases: &str) -> Vec<Vec<String>> {
+    fn process_phrases(&self, phrases: &str) -> Vec<Vec<String>> {
         katana::cut(&phrases.to_string())
             .iter()
             .map(|phrase| {
@@ -90,23 +73,20 @@ impl Summary {
             .collect()
     }
 
-    pub fn summarize (&mut self, phrases: &str, max_phrases: u32) -> (Vec<String>, Vec<String>) {
+    pub fn summarize(&mut self, phrases: &str, max_phrases: u32) -> (Vec<String>, Vec<String>) {
         let phrases = self.process_phrases(phrases);
 
         let mut keyword_frequency: HashMap<String, u32> = HashMap::new();
 
-        let cut_phrases =
-            phrases.iter()
-                   .map(|phrase| {
-                        phrase[0].split(" ")
-                            .collect::<Vec<&str>>()
-                    })
-                   .collect::<Vec<Vec<&str>>>();
+        let cut_phrases = phrases
+            .iter()
+            .map(|phrase| phrase[0].split(" ").collect::<Vec<&str>>())
+            .collect::<Vec<Vec<&str>>>();
 
-        let in_phrases =
-            phrases.iter()
-                   .map(|phrase| phrase[1].clone())
-                   .collect::<Vec<String>>();
+        let in_phrases = phrases
+            .iter()
+            .map(|phrase| phrase[1].clone())
+            .collect::<Vec<String>>();
 
         /* populate keyword frequency map */
         for phrase in cut_phrases.iter() {
@@ -119,7 +99,7 @@ impl Summary {
 
         let mut phrase_weights: BTreeMap<u32, BTreeSet<u32>> = BTreeMap::new();
 
-        let mut i:u32 = 0;
+        let mut i: u32 = 0;
 
         /*
             populate keyword frequency map
@@ -169,11 +149,7 @@ impl Summary {
                             6u32
                         }
                     } else if is_verb {
-                        if !(is_adj || is_adv) {
-                            2u32
-                        } else {
-                            1u32
-                        }
+                        if !(is_adj || is_adv) { 2u32 } else { 1u32 }
                     } else {
                         1u32
                     }
@@ -185,7 +161,7 @@ impl Summary {
             /* insert a weight relation: weight -> [phrases, ..] */
             let mut weight_map = match phrase_weights.get(&weight) {
                 Some(map) => (*map).clone(),
-                None => BTreeSet::new()
+                None => BTreeSet::new(),
             };
 
             weight_map.insert(i);
@@ -223,20 +199,19 @@ impl Summary {
         /*
             build output tuple: (Vec<String>, Vec<String>) -- (phrases, keywords)
         */
-        (
-            out_set
-                .iter()
-                .map(|entry| in_phrases[*entry as usize].clone())
-                .collect(),
-            {
-                let mut kf_tuples = keyword_frequency
-                    .iter()
-                    .map(|(k, v)| (k.to_owned(), *v))
-                    .collect::<Vec<(String, u32)>>();
+        (out_set
+             .iter()
+             .map(|entry| in_phrases[*entry as usize].clone())
+             .collect(),
+         {
+             let mut kf_tuples = keyword_frequency
+                 .iter()
+                 .map(|(k, v)| (k.to_owned(), *v))
+                 .collect::<Vec<(String, u32)>>();
 
-                kf_tuples.sort_by(|a, b| a.1.cmp(&b.1));
+             kf_tuples.sort_by(|a, b| a.1.cmp(&b.1));
 
-                kf_tuples
+             kf_tuples
                     .iter()
                     // filter out non-nouns
                     // map to strings
@@ -249,7 +224,6 @@ impl Summary {
                         }
                     )
                     .collect()
-            }
-        )
+         })
     }
 }

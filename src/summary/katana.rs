@@ -20,8 +20,11 @@ pub fn cut(origin_text: &String) -> Vec<String> {
     // Remove abbreviations.
     let abbrev = Regex::new(r"(?:[A-Za-z]\.){2,}").unwrap();
     text = (*abbrev.replace_all(&text.to_string(), |caps: &Captures| {
-        caps.iter().map(|c| c.unwrap().as_str().to_string().replace(".", "&-&")).collect()
-    })).to_string();
+        caps.iter()
+            .map(|c| c.unwrap().as_str().to_string().replace(".", "&-&"))
+            .collect()
+    }))
+            .to_string();
 
     // Remove initials.
     let initials = Regex::new(r"(?P<init>[A-Z])(?P<point>\.)").unwrap();
@@ -60,24 +63,33 @@ pub fn cut(origin_text: &String) -> Vec<String> {
 
     // Split on any sentence ender.
     let s: Vec<&str> = text.split("!").collect();
-    let s_last = s.len()-1;
-    let mut s_one: Vec<String> = s[0..s_last].iter().map(|s| String::from(*s) + "!").collect();
+    let s_last = s.len() - 1;
+    let mut s_one: Vec<String> = s[0..s_last]
+        .iter()
+        .map(|s| String::from(*s) + "!")
+        .collect();
     s_one.push(String::from(s[s_last]));
 
     let mut s_two: Vec<String> = Vec::new();
     for sen in s_one.iter() {
-        let ss: Vec<&str> =  sen.split("?").collect();
-        let mut tmp_vec: Vec<String> = ss[0..ss.len()-1].iter().map(|s| String::from(*s) + "?").collect();
+        let ss: Vec<&str> = sen.split("?").collect();
+        let mut tmp_vec: Vec<String> = ss[0..ss.len() - 1]
+            .iter()
+            .map(|s| String::from(*s) + "?")
+            .collect();
         s_two.append(&mut tmp_vec);
-        s_two.push(String::from(ss[ss.len()-1]));
+        s_two.push(String::from(ss[ss.len() - 1]));
     }
 
     let mut final_vec: Vec<String> = Vec::new();
     for sen in s_two.iter() {
         let ss: Vec<&str> = sen.split(".").collect();
-        let mut tmp_vec: Vec<String> = ss[0..ss.len()-1].iter().map(|s| String::from(*s) + ".").collect();
+        let mut tmp_vec: Vec<String> = ss[0..ss.len() - 1]
+            .iter()
+            .map(|s| String::from(*s) + ".")
+            .collect();
         final_vec.append(&mut tmp_vec);
-        final_vec.push(String::from(ss[ss.len()-1]));
+        final_vec.push(String::from(ss[ss.len() - 1]));
     }
 
     // Repair the damage we've done.

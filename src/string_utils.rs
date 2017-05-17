@@ -13,11 +13,7 @@ impl StringCase for str {
         let mut result = String::with_capacity(self.len());
 
         for (i, c) in self.chars().enumerate() {
-            result.push(if i == 0 {
-                c.to_ascii_uppercase()
-            } else {
-                c
-            });
+            result.push(if i == 0 { c.to_ascii_uppercase() } else { c });
         }
 
         result

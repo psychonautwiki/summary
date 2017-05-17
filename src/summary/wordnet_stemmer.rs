@@ -6,20 +6,19 @@ use std::vec::Vec;
 
 #[derive(PartialEq)]
 pub enum Part {
-    Noun=0,
-    Verb=1,
-    Adj=2,
-    Adv=3
+    Noun = 0,
+    Verb = 1,
+    Adj = 2,
+    Adv = 3,
 }
 
 impl Part {
-
     fn as_usize(&self) -> usize {
         match *self {
             Part::Noun => 0,
             Part::Verb => 1,
             Part::Adj => 2,
-            Part::Adv => 3
+            Part::Adv => 3,
         }
     }
 
@@ -28,25 +27,26 @@ impl Part {
             Part::Noun => "noun",
             Part::Verb => "verb",
             Part::Adj => "adj",
-            Part::Adv => "adv"
+            Part::Adv => "adv",
         }
     }
-
 }
 
 
-pub const NOUN:usize = 0;
-pub const VERB:usize = 1;
-pub const ADJ:usize = 2;
-pub const ADV:usize = 3;
+pub const NOUN: usize = 0;
+pub const VERB: usize = 1;
+pub const ADJ: usize = 2;
+pub const ADV: usize = 3;
 
-const PARTS:[usize; 4] = [NOUN, VERB, ADJ, ADV];
-const WN_FILES:[[&'static str; 2]; 4] = [
-    /* noun */ ["index.noun", "noun.exc"],
-    /* verb */ ["index.verb", "verb.exc"],
-    /* adj  */ ["index.adj", "adj.exc"],
-    /* adv  */ ["index.adv", "adv.exc"]
-];
+const PARTS: [usize; 4] = [NOUN, VERB, ADJ, ADV];
+const WN_FILES: [[&'static str; 2]; 4] = [/* noun */
+                                          ["index.noun", "noun.exc"],
+                                          /* verb */
+                                          ["index.verb", "verb.exc"],
+                                          /* adj  */
+                                          ["index.adj", "adj.exc"],
+                                          /* adv  */
+                                          ["index.adv", "adv.exc"]];
 
 
 /*static STR_ADJ: char = 'a';
@@ -58,7 +58,7 @@ static STR_VERB: char = 'v';*/
 type FastHashMap = HashMap<String, String>;
 type Wordlist = Vec<FastHashMap>;
 type Exceptions = Vec<HashMap<String, Vec<String>>>;
-type Substitutions = Vec<Vec<Vec<&'static str>>> ;
+type Substitutions = Vec<Vec<Vec<&'static str>>>;
 type LemmaPosOffsetMap = HashMap<String, HashMap<usize, Vec<i32>>>;
 type FileMap = HashMap<char, String>;
 
@@ -72,7 +72,6 @@ pub struct WordnetStemmer {
 }
 
 impl WordnetStemmer {
-
     pub fn new(basedir: &str) -> Result<WordnetStemmer> {
         let mut wn = WordnetStemmer {
             basedir: basedir.to_owned(),
@@ -137,23 +136,25 @@ impl WordnetStemmer {
         fm
     }*/
 
-    fn load(&mut self,
-        part: usize,
-        pair: [&str; 2]
-        ) -> Result<()> {
-        let fname:String = format!("{}{}", self.basedir, pair[0]);
+    fn load(&mut self, part: usize, pair: [&str; 2]) -> Result<()> {
+        let fname: String = format!("{}{}", self.basedir, pair[0]);
         let mut f = match File::open(fname.clone()) {
             Ok(v) => v,
-            Err(e) => match e.kind() {
-                ErrorKind::NotFound => return Err(io::Error::new(ErrorKind::Other, format!("WordnetStemmer: could not open or read file {}", fname))),
-                _ => return Err(e)
+            Err(e) => {
+                match e.kind() {
+                    ErrorKind::NotFound => {
+                        return Err(io::Error::new(ErrorKind::Other,
+                                                  format!("WordnetStemmer: could not open or read file {}", fname)))
+                    }
+                    _ => return Err(e),
+                }
             }
         };
         let mut br = BufReader::new(f);
         for line_result in br.lines() {
             let line = try!(line_result);
             if line.starts_with("  ") {
-                continue
+                continue;
             }
 
             let word = line.splitn(2, ' ').nth(0).unwrap();
@@ -167,33 +168,41 @@ impl WordnetStemmer {
         for line_result in br.lines() {
             let line: String = try!(line_result);
             if line.starts_with("  ") {
-                continue
+                continue;
             }
 
             let words: Vec<&str> = line.splitn(3, ' ').collect();
-            self.exceptions[part].entry(words[0].to_owned()).or_insert(Vec::new()).push(words[1].to_owned());
+            self.exceptions[part]
+                .entry(words[0].to_owned())
+                .or_insert(Vec::new())
+                .push(words[1].to_owned());
         }
 
         let res = self.load_lemma_pos_offset_map();
         res
     }
 
-    fn load_lemma_pos_offset_map(&mut self) -> Result<()>{
-       for variant in [Part::Noun, Part::Verb, Part::Adj, Part::Adv].iter() {
-       //for suffix in WordnetStemmer::filemap().values(){
-            let fname:String = format!("{}/index.{}", self.basedir, variant.as_str());
+    fn load_lemma_pos_offset_map(&mut self) -> Result<()> {
+        for variant in [Part::Noun, Part::Verb, Part::Adj, Part::Adv].iter() {
+            //for suffix in WordnetStemmer::filemap().values(){
+            let fname: String = format!("{}/index.{}", self.basedir, variant.as_str());
             let f = match File::open(fname.clone()) {
                 Ok(v) => v,
-                Err(e) => match e.kind() {
-                    ErrorKind::NotFound => return Err(io::Error::new(ErrorKind::Other, format!("WordnetStemmer: could not open or read file {}", fname))),
-                    _ => return Err(e)
+                Err(e) => {
+                    match e.kind() {
+                        ErrorKind::NotFound => {
+                            return Err(io::Error::new(ErrorKind::Other,
+                                                      format!("WordnetStemmer: could not open or read file {}", fname)))
+                        }
+                        _ => return Err(e),
+                    }
                 }
             };
             let br = BufReader::new(f);
             for line_result in br.lines() {
                 let line = try!(line_result);
                 if line.starts_with(" ") {
-                    continue
+                    continue;
                 }
                 let mut iter = line.split(' ');
 
@@ -206,42 +215,49 @@ impl WordnetStemmer {
                 let n_pointers = iter.next().unwrap().parse::<i32>().unwrap();
 
                 // same as number of synsets
-                let _ = iter.nth((n_pointers as usize)).unwrap().parse::<i32>().unwrap(); //n_senses
+                let _ = iter.nth((n_pointers as usize))
+                    .unwrap()
+                    .parse::<i32>()
+                    .unwrap(); //n_senses
 
                 // get number of senses ranked according to frequency
-                let _ =iter.next();
+                let _ = iter.next();
                 // get synset offsets
-                let synset_offsets:Vec<i32> = iter.take(n_synsets as usize).map(|x|x.parse::<i32>().unwrap()).collect();
+                let synset_offsets: Vec<i32> = iter.take(n_synsets as usize)
+                    .map(|x| x.parse::<i32>().unwrap())
+                    .collect();
                 match self.lemma_pos_offset_map.entry(lemma.to_owned()) {
                     hash_map::Entry::Vacant(entry) => {
                         let mut hm = HashMap::new();
                         hm.insert(variant.as_usize(), synset_offsets);
                         entry.insert(hm);
-                    },
-                    hash_map::Entry::Occupied(mut entry) => { entry.get_mut().insert(variant.as_usize(), synset_offsets); }
+                    }
+                    hash_map::Entry::Occupied(mut entry) => {
+                        entry.get_mut().insert(variant.as_usize(), synset_offsets);
+                    }
                 }
                 //let mut hm = HashMap::new();
                 //hm.insert(variant.as_usize(), synset_offsets);
                 //self.lemma_pos_offset_map.insert(lemma.to_owned(), hm);
-                if *variant == Part::Adj {
-                }
+                if *variant == Part::Adj {}
 
 
             }
 
-       }
-       Ok(())
+        }
+        Ok(())
     }
 
-    fn apply_rules(&self, part: usize, words: &Vec<String>
-    ) -> Vec<String>{
+    fn apply_rules(&self, part: usize, words: &Vec<String>) -> Vec<String> {
         let mut result = vec![];
         for word in words.iter() {
-            for pair in self.substitutions[part].iter(){
+            for pair in self.substitutions[part].iter() {
                 let old: &str = (*pair)[0];
                 let new: &str = (*pair)[1];
-                if word.ends_with(old){
-                    let w: String = (word.chars().take(word.chars().count() - old.chars().count()).collect::<String>()) + &new;
+                if word.ends_with(old) {
+                    let w: String = (word.chars()
+                                         .take(word.chars().count() - old.chars().count())
+                                         .collect::<String>()) + &new;
                     result.push(w);
 
                 }
@@ -252,9 +268,9 @@ impl WordnetStemmer {
     }
 
     fn filter_forms(&self, words: &Vec<String>, part: usize) -> Vec<String> {
-        let mut result:Vec<String> = vec![];
+        let mut result: Vec<String> = vec![];
         let mut seen = HashSet::new();
-        for word in words.iter(){
+        for word in words.iter() {
             if self.lemma_pos_offset_map.contains_key(word) {
                 if self.lemma_pos_offset_map[word].contains_key(&part) {
                     if !seen.contains(word) {
@@ -267,15 +283,12 @@ impl WordnetStemmer {
         result
     }
 
-    fn morphy(&self,
-        part: usize,
-        word: &str
-    ) -> Vec<String> {
+    fn morphy(&self, part: usize, word: &str) -> Vec<String> {
 
-        if self.exceptions[part].contains_key(word){
+        if self.exceptions[part].contains_key(word) {
             let mut words = vec![word.to_owned()];
             words.extend_from_slice(&self.exceptions[part][word]);
-            return self.filter_forms(&words, part)
+            return self.filter_forms(&words, part);
         }
 
         let mut forms = self.apply_rules(part, &vec![word.to_owned()]);
@@ -284,7 +297,7 @@ impl WordnetStemmer {
             words.extend_from_slice(&forms);
             let results = self.filter_forms(&words, part);
             if results.len() > 0 {
-                return results
+                return results;
             }
         }
 
@@ -292,7 +305,7 @@ impl WordnetStemmer {
             forms = self.apply_rules(part, &forms);
             let results = self.filter_forms(&forms, part);
             if results.len() > 0 {
-                return results
+                return results;
             }
         }
         vec![]
@@ -311,16 +324,18 @@ impl WordnetStemmer {
                 }
             }
             lemmas[w_idx].to_owned()
-        } else { word.to_owned() }
+        } else {
+            word.to_owned()
+        }
     }
 
     pub fn lemma_phrase(&self, part: usize, phrase: &str) -> String {
         phrase
-        .to_lowercase()
-        .split_whitespace()
-        .map(|word| self.lemma(part, word))
-        .collect::<Vec<String>>()
-        .join(" ")
+            .to_lowercase()
+            .split_whitespace()
+            .map(|word| self.lemma(part, word))
+            .collect::<Vec<String>>()
+            .join(" ")
     }
 
     #[inline(always)]
@@ -345,12 +360,7 @@ impl WordnetStemmer {
 
     #[inline(always)]
     pub fn word_type(&self, word: &str) -> (bool, bool, bool, bool) {
-        (
-            self.is_noun(word),
-            self.is_verb(word),
-            self.is_adj(word),
-            self.is_adv(word)
-        )
+        (self.is_noun(word), self.is_verb(word), self.is_adj(word), self.is_adv(word))
     }
 }
 
