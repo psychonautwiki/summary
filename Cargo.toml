@@ -1,6 +1,6 @@
 [package]
 authors = ["Kenan Sulayman <kenan@sly.mn>"]
-name = "fun"
+name = "summary"
 version = "0.1.0"
 
 [dependencies]
