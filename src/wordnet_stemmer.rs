@@ -322,6 +322,36 @@ impl WordnetStemmer {
         .collect::<Vec<String>>()
         .join(" ")
     }
+
+    #[inline(always)]
+    pub fn is_noun(&self, word: &str) -> bool {
+        self.wordlist[NOUN].get(word).is_some()
+    }
+
+    #[inline(always)]
+    pub fn is_verb(&self, word: &str) -> bool {
+        self.wordlist[VERB].get(word).is_some()
+    }
+
+    #[inline(always)]
+    pub fn is_adj(&self, word: &str) -> bool {
+        self.wordlist[ADJ].get(word).is_some()
+    }
+
+    #[inline(always)]
+    pub fn is_adv(&self, word: &str) -> bool {
+        self.wordlist[ADV].get(word).is_some()
+    }
+
+    #[inline(always)]
+    pub fn word_type(&self, word: &str) -> (bool, bool, bool, bool) {
+        (
+            self.is_noun(word),
+            self.is_verb(word),
+            self.is_adj(word),
+            self.is_adv(word)
+        )
+    }
 }
 
 #[cfg(test)]
