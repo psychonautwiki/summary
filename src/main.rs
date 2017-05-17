@@ -89,7 +89,7 @@ impl Fun {
             .collect()
     }
 
-    fn summarize (&mut self, phrases: &str, max_phrases: u32) -> Vec<String> {
+    fn summarize (&mut self, phrases: &str, max_phrases: u32) -> (Vec<String>, Vec<String>) {
         let phrases = self.process_phrases(phrases);
 
         let mut keyword_frequency: HashMap<String, u32> = HashMap::new();
@@ -120,14 +120,30 @@ impl Fun {
 
         let mut i:u32 = 0;
 
-        /* populate keyword frequency map */
+        /*
+            populate keyword frequency map
+
+            Algorithm:
+                for each word in phrase
+                    build weight from
+                        absolute keyword frequency
+                        word type multiplier
+                    insert offset into weight map at index [weight]
+
+            Trivia:
+                For a set [a, b, c] (where a, b, c are words in a phrase)
+                compute weight and obtain index, so that a sorted map
+                {weight1: [a], weight2: [b, c], ..} can be built.
+
+                This allows for more space-efficient tracking of top
+                phrases and for a trivial top-down iteration.
+        */
+
         for phrase in cut_phrases.iter() {
             let mut weight = 0u32;
 
             for word in phrase.iter() {
                 let word_weight = *keyword_frequency.get(*word).unwrap();
-
-                println!("{:?} {:?} {:?}", word, self.stemmer.wordlist[NOUN].get(*word), self.stemmer.wordlist[VERB].get(*word));
 
                 /*
                     ~~Algorithm draft~~
@@ -143,12 +159,7 @@ impl Fun {
                 */
 
                 let multiplier = {
-                    let (is_noun, is_verb, is_adj, is_adv) = (
-                        self.stemmer.wordlist[NOUN].get(*word).is_some(),
-                        self.stemmer.wordlist[VERB].get(*word).is_some(),
-                        self.stemmer.wordlist[ADJ].get(*word).is_some(),
-                        self.stemmer.wordlist[ADV].get(*word).is_some()
-                    );
+                    let (is_noun, is_verb, is_adj, is_adv) = self.stemmer.word_type(word);
 
                     if is_noun {
                         if is_verb || is_adj || is_adv {
@@ -183,7 +194,10 @@ impl Fun {
             i = i + 1;
         }
 
-        println!("{:?}", keyword_frequency);
+        /*
+            From BTreeMap<weight: u32, phrases: Vec<u32>> map top max_phrases
+            into a BTreeSet (sorted).
+        */
 
         let mut out_set: BTreeSet<u32> = BTreeSet::new();
 
@@ -205,10 +219,25 @@ impl Fun {
             }
         }
 
-        out_set
-            .iter()
-            .map(|entry| in_phrases[*entry as usize].clone())
-            .collect()
+        /*
+            build output tuple: (Vec<String>, Vec<String>) -- (phrases, keywords)
+        */
+        (
+            out_set
+                .iter()
+                .map(|entry| in_phrases[*entry as usize].clone())
+                .collect(),
+            keyword_frequency
+                .keys()
+                // copy and take ownership of &str
+                .filter_map(|word|
+                    Some(word.to_owned().to_string())
+
+                    // TODO: extend
+                )
+                // build Vec<String> from mapped Vec<&'[temp] str>
+                .collect()
+        )
     }
 }
 
