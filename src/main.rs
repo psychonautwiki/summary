@@ -230,16 +230,19 @@ impl Fun {
                 .iter()
                 .map(|entry| in_phrases[*entry as usize].clone())
                 .collect(),
-            keyword_frequency
-                .keys()
-                // copy and take ownership of &str
-                .filter_map(|word|
-                    Some(word.to_owned().to_string())
+            {
+                let mut kf_tuples = keyword_frequency
+                    .iter()
+                    .map(|(k, v)| (k.to_owned(), *v))
+                    .collect::<Vec<(String, u32)>>();
 
-                    // TODO: extend
-                )
-                // build Vec<String> from mapped Vec<&'[temp] str>
-                .collect()
+                kf_tuples.sort_by(|a, b| a.1.cmp(&b.1));
+
+                kf_tuples
+                    .iter()
+                    .map(|&(ref a, _)| a.to_string())
+                    .collect()
+            }
         )
     }
 }
@@ -271,5 +274,7 @@ Indeed, Schulze-Makuch speculates planetary protection may be a lost cause for M
     // TODO: use sorted keyword btreeset, cut by desired titles
     let titles = titlegenerator::build_titles(&keywords, 5u32);
 
-    println!("{:?}", titles);
+    for title in titles {
+        println!("{:?}", title);
+    }
 }
