@@ -1,7 +1,10 @@
+extern crate rand;
 extern crate regex;
 
 mod katana;
 mod wordnet_stemmer;
+
+mod titlegenerator;
 
 use wordnet_stemmer::{WordnetStemmer, NOUN, VERB, ADJ, ADV};
 
@@ -263,5 +266,10 @@ Indeed, Schulze-Makuch speculates planetary protection may be a lost cause for M
 
     let mut fun = Fun::new();
 
-    println!("{:?}", fun.summarize(phrase, 4u32));
+    let (phrases, keywords) = fun.summarize(phrase, 4u32);
+
+    // TODO: use sorted keyword btreeset, cut by desired titles
+    let titles = titlegenerator::build_titles(&keywords, 5u32);
+
+    println!("{:?}", titles);
 }
