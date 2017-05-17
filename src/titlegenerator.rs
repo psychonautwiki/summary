@@ -1,5 +1,8 @@
 use rand::{thread_rng, Rng};
 
+/* trait on str allowing for case to be changed */
+use util::StringCase;
+
 const TITLE_NUM: u32 = 666;
 
 const TITLE_PARTS: [(&'static str, &'static str); 666] = [
@@ -697,7 +700,7 @@ pub fn build_titles (keywords: &Vec<String>, num_titles: u32) -> Vec<String> {
                     // total number of keywords
                     0, keywords.len() as usize
                 )
-            ],
+            ].to_capitalized(),
 
             suffix
         );

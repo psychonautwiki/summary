@@ -1,10 +1,17 @@
 extern crate rand;
 extern crate regex;
 
+/* phrase cutter */
 mod katana;
+
+/* Generate titles */
+mod titlegenerator;
+
+/* Stemming & word type detection */
 mod wordnet_stemmer;
 
-mod titlegenerator;
+/* General toolchain for misc. tasks */
+mod util;
 
 use wordnet_stemmer::{WordnetStemmer, NOUN, VERB, ADJ, ADV};
 
